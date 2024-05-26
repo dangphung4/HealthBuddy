@@ -20,8 +20,8 @@ Here’s how we’ve organized the project:
 
 ```
 /healthbuddy
-|-- /frontend          # React stuff happens here
-|-- /backend           # FastAPI handles the backend
+|-- /Server.           # FastAPI handles the backend
+|-- /Web.              # React stuff happens here 
 |-- /docs              # Documentation
 |-- README.md
 ```
@@ -67,7 +67,7 @@ fastapi run
 
 Make sure to configure the necessary API keys:
 
-- `SYNTHESIA_API_KEY`: Your API key for Synthesia AI
+- `OPEN_API_KEY`: Your API key for Open AI
 - `GOOGLE_APPLICATION_CREDENTIALS`: Path to your Google Cloud service account key
 
 ## Usage
