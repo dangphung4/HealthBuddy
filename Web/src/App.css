@@ -1,52 +1,43 @@
 :root {
-    --background: #f5f5f5;
-    --color: #333;
-    --nav-background: #ffffff;
-    --nav-item-hover: #e0e0e0;
-    --icon-color: #333;
-  }
-  
-  body.light-mode {
-    --background: #f5f5f5;
-    --color: #333;
-    --nav-background: #ffffff;
-    --nav-item-hover: #e0e0e0;
-    --icon-color: #333;
-  }
-  
-  body.dark-mode {
-    --background: #171717;
-    --color: #f5f5f5;
-    --nav-background: #111111;
-    --nav-item-hover: #171717;
-    --icon-color: #f5f5f5;
-  }
-  
-  body {
-    background-color: var(--background);
-    color: var(--color);
-    transition: background-color 0.3s, color 0.3s;
-  }
-  
-  .navbar {
-    background-color: var(--nav-background);
-  }
-  
-  .nav-item:hover {
-    background-color: var(--nav-item-hover);
-  }
-  
-  .icon-button {
-    color: var(--icon-color);
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    transition: none;
-  }
-  
-  .icon-button:hover, .icon-button:focus, .icon-button:active {
-    background-color: transparent;
-    color: var(--icon-color);
-  }
-  
+  --background: #f5f5f5;
+  --color: #333;
+  --nav-background: #ffffff;
+  --nav-item-hover: #e0e0e0;
+  --icon-color: #333;
+}
+
+body.light-mode {
+  --background: #f5f5f5;
+  --color: #333;
+  --nav-background: #ffffff;
+  --nav-item-hover: #e0e0e0;
+  --icon-color: #333;
+}
+
+body.dark-mode {
+  --background: #171717;
+  --color: #f5f5f5;
+  --nav-background: #333; /* Updated to a darker color */
+  --nav-item-hover: #555;
+  --icon-color: #f5f5f5;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.navbar {
+  background-color: var(--nav-background);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-item {
+  color: var(--color);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.nav-item:hover {
+  background-color: var(--nav-item-hover);
+}
