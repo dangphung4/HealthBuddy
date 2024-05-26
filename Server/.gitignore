@@ -23,3 +23,5 @@ lib/
 # PyCharm
 .idea/
 Speech2t.json
+
+.env
