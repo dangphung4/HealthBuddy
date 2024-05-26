@@ -52,9 +52,14 @@ async def websocket_endpoint(websocket: WebSocket):
         await websocket.close()
         
         
+# @app.get("/")
+# async def read_root():
+#     with open("test1.wav", "rb") as file:
+#         return await full_conversation(SpeechToChatRequest(audio=UploadFile(file), role="doctor. you are helping an elderly woman with dementia and alzheimers. you must not let her know that she has these conditions. respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. respond in Vietnamese."))
+
 @app.get("/")
 def read_root():
-    return full_conversation( SpeechToChatRequest( audio=UploadFile( "Adver.wav" ), role="user" ) )
+    return {"Hello": "World"}
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str = None):
@@ -141,12 +146,15 @@ async def full_conversation(request: SpeechToChatRequest):
         messages=[{"role": "user", "content": transcript}, {"role": "assistant", "content": f"Act as a {request.role}"}]
     )
     chat_text = chat_response.choices[0].message.content
-
+    
+    print(chat_text)
+    
     # Convert response text back to speech
     tts_input = texttospeech.SynthesisInput(text=chat_text)
     tts_voice = texttospeech.VoiceSelectionParams(
-        language_code="en-US",
-        ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
+        language_code="vi-VN",
+        name="vi-VN-Neural2-D",
+        ssml_gender=texttospeech.SsmlVoiceGender.MALE
     )
     tts_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
     tts_response = tts_client.synthesize_speech(
@@ -154,6 +162,10 @@ async def full_conversation(request: SpeechToChatRequest):
         voice=tts_voice,
         audio_config=tts_config
     )
+
+    output_file = "output_audio.mp3"
+    with open(output_file, "wb") as f:
+        f.write(tts_response.audio_content)
 
     return Response(content=tts_response.audio_content, media_type="audio/mp3")
 
