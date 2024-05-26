@@ -1,0 +1,25 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environment
+venv/
+.venv/
+env/
+.env/
+lib/
+.lib
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# macOS system files
+.DS_Store
+
+# VSCode
+.vscode/
+
+# PyCharm
+.idea/
+Speech2t.json
