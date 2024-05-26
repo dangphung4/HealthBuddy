@@ -66,4 +66,4 @@ def transcribe_file(speech_file):
         print("Transcript: {}".format(result.alternatives[0].transcript))
 
 if __name__ == "__main__":
-    transcribe_file("path_to_your_audio_file.wav")
+    transcribe_file("Adver.wav")
