@@ -31,7 +31,7 @@ class SpeechToChatRequest(BaseModel):
 
 class OpenAIRequest(BaseModel):
     text: str
-    role: str
+    role: str = "user"  
 
 sessions = {}
 
@@ -135,53 +135,12 @@ async def full_conversation(request: SpeechToChatRequest):
     transcript = " ".join([result.alternatives[0].transcript for result in speech_response.results])
 
     # Generate response using OpenAI
-    chat_response = openai.ChatCompletion.create(
+    client = OpenAI()
+    chat_response = client.chat.completions.create(
         model="gpt-3.5-turbo",
         messages=[{"role": "user", "content": transcript}, {"role": "assistant", "content": f"Act as a {request.role}"}]
     )
-    chat_text = chat_response.choices[0].message['content']
-
-    # Convert response text back to speech
-    tts_input = texttospeech.SynthesisInput(text=chat_text)
-    tts_voice = texttospeech.VoiceSelectionParams(
-        language_code="en-US",
-        ssml_gender=texttospeech.SsmlVoiceGender.NEUTRAL
-    )
-    tts_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
-    tts_response = tts_client.synthesize_speech(
-        input=tts_input,
-        voice=tts_voice,
-        audio_config=tts_config
-    )
-
-    return Response(content=tts_response.audio_content, media_type="audio/mp3")
-
-
-@app.post("/doctor-conversation/")
-async def doctor_conversation(request: SpeechToChatRequest):
-    # Convert speech to text
-    audio_content = await request.audio.read()
-    audio_recognition = speech.RecognitionAudio(content=audio_content)
-    stt_config = speech.RecognitionConfig(
-        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=48000,
-        language_code="en-US"
-    )
-    speech_response = speech_client.recognize(config=stt_config, audio=audio_recognition)
-    transcript = " ".join([result.alternatives[0].transcript for result in speech_response.results])
-
-    # Custom prompts for the doctor role
-    if "fall" in transcript.lower() or "hurt" in transcript.lower():
-        prompt = "As a doctor, provide advice to someone who has fallen and might be hurt."
-    else:
-        prompt = f"As a doctor, how would you respond to: '{transcript}'?"
-
-    # Generate response using OpenAI
-    chat_response = openai.ChatCompletion.create(
-        model="gpt-3.5-turbo",
-        messages=[{"role": "system", "content": prompt}]
-    )
-    chat_text = chat_response.choices[0].message['content']
+    chat_text = chat_response.choices[0].message.content
 
     # Convert response text back to speech
     tts_input = texttospeech.SynthesisInput(text=chat_text)
@@ -219,11 +178,12 @@ async def session_conversation(request: SpeechToChatRequest):
     sessions[session_id].append({"role": "user", "content": transcript})
 
     # Generate response using OpenAI, incorporating session context
-    chat_response = openai.ChatCompletion.create(
+    client = OpenAI()
+    chat_response = client.chat.completions.create(
         model="gpt-4o",  # Assuming using GPT-4
         messages=sessions[session_id]
     )
-    chat_text = chat_response.choices[0].message['content']
+    chat_text = chat_response.choices[0].message.content
     
     # Update session history with the assistant's response
     sessions[session_id].append({"role": "assistant", "content": chat_text})
@@ -252,19 +212,31 @@ async def openai_chat(request: OpenAIRequest):
         # Assuming OPENAI_API_KEY is set in your environment variables
         client = OpenAI()
 
+        # Initialize the conversation history if not already present
+        if "conversation_history" not in sessions:
+            sessions["conversation_history"] = [
+                {
+                    "role": "system",
+                    "content": "You are a compassionate and patient doctor. You are talking to an elderly woman she has dementia and alzhiemers. You must not let her know that she has these conditions. Respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. Respond in Vietnamese."
+                }
+            ]
 
-        # The correct method to call the chat completion API in openai>=1.0.0
+        # Add the user's input to the conversation history
+        sessions["conversation_history"].append({"role": "user", "content": request.text})
+
+        # Call the chat completion API with the conversation history
         response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a helpful assistant."},
-            {"role": "user", "content": "Who won the world series in 2020?"},
-            {"role": "assistant", "content": "The Los Angeles Dodgers won the World Series in 2020."},
-            {"role": "user", "content": "Where was it played?"}
-        ]
+            model="gpt-4o",
+            messages=sessions["conversation_history"]
         )
-        
-        return {"response": response.choices[0].message.content}
-    
+
+        # Extract the assistant's response from the API response
+        assistant_response = response.choices[0].message.content
+
+        # Add the assistant's response to the conversation history
+        sessions["conversation_history"].append({"role": "assistant", "content": assistant_response})
+
+        return {"response": assistant_response}
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
