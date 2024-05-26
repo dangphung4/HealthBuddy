@@ -1,4 +1,5 @@
 import os
+import io
 from fastapi import FastAPI, File, UploadFile, WebSocket, Response, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -7,6 +8,7 @@ from dotenv import load_dotenv
 from uuid import uuid4
 from openai import OpenAI
 import openai
+import soundfile as sf
 
 load_dotenv()
 
@@ -57,9 +59,15 @@ async def websocket_endpoint(websocket: WebSocket):
 #     with open("test1.wav", "rb") as file:
 #         return await full_conversation(SpeechToChatRequest(audio=UploadFile(file), role="doctor. you are helping an elderly woman with dementia and alzheimers. you must not let her know that she has these conditions. respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. respond in Vietnamese."))
 
+# @app.get("/")
+# def read_root():
+#     transcribe_file("vietnamese.wav")
+
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
+async def read_root():
+    with open("viet.wav", "rb") as file:
+        return await full_conversation(SpeechToChatRequest(audio=UploadFile(file), role="doctor. you are helping an elderly woman with dementia and alzheimers. you must not let her know that she has these conditions. respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. respond in Vietnamese."))
+
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str = None):
@@ -92,8 +100,8 @@ def transcribe_file(speech_file):
     config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
         sample_rate_hertz=48000,
-        # language_code="vi-VN"  # Set the language to Vietnamese
-        language_code="en-US"  # Set the language to English
+        language_code="vi-VN"  # Set the language to Vietnamese
+        # language_code="en-US"  # Set the language to English
     )
 
     response = speech_client.recognize(config=config, audio=audio)
@@ -101,8 +109,8 @@ def transcribe_file(speech_file):
     for result in response.results:
         print("Transcript: {}".format(result.alternatives[0].transcript))
 
-if __name__ == "__main__":
-    transcribe_file("Adver.wav")
+# if __name__ == "__main__":
+#     transcribe_file("vietnamese.wav")
 
 
 @app.post("/text-to-speech/")
@@ -130,14 +138,28 @@ async def convert_text_to_speech(request: TextToSpeechRequest):
 async def full_conversation(request: SpeechToChatRequest):
     # Convert speech to text
     audio_content = await request.audio.read()
+    audio_buffer = io.BytesIO(audio_content)
+    
+    data, sr = sf.read(audio_buffer)
+    
+    audio_recognition = speech.RecognitionAudio(content=audio_content)
+    
+
     audio_recognition = speech.RecognitionAudio(content=audio_content)
     stt_config = speech.RecognitionConfig(
         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=48000,
-        language_code="en-US"
+        sample_rate_hertz=sr,  # Use the sample rate retrieved from the audio file
+        language_code="vi-VN"  # Set the language to Vietnamese
     )
+
     speech_response = speech_client.recognize(config=stt_config, audio=audio_recognition)
+    
     transcript = " ".join([result.alternatives[0].transcript for result in speech_response.results])
+    
+    print("speech_response:", speech_response.results)
+    print("Speech Recognition Response:")
+    print(speech_response)
+    print("Transcript:", transcript)
 
     # Generate response using OpenAI
     client = OpenAI()
@@ -147,7 +169,10 @@ async def full_conversation(request: SpeechToChatRequest):
     )
     chat_text = chat_response.choices[0].message.content
     
-    print(chat_text)
+    # print(chat_text)
+    
+    print("Transcribed Text:")
+    print(transcript)
     
     # Convert response text back to speech
     tts_input = texttospeech.SynthesisInput(text=chat_text)
@@ -166,6 +191,7 @@ async def full_conversation(request: SpeechToChatRequest):
     output_file = "output_audio.mp3"
     with open(output_file, "wb") as f:
         f.write(tts_response.audio_content)
+    
 
     return Response(content=tts_response.audio_content, media_type="audio/mp3")
 
