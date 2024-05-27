@@ -13,7 +13,7 @@ steps:
   args: ['run', 'deploy', 'healthbuddy', '--image', 'gcr.io/$PROJECT_ID/healthbuddy:$COMMIT_SHA', '--region', 'us-central1', '--platform', 'managed', '--allow-unauthenticated']
 
 substitutions:
-  _PORT: 8080
+  _PORT: "8080"
 
 images:
 - 'gcr.io/$PROJECT_ID/healthbuddy:$COMMIT_SHA'
