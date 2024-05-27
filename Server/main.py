@@ -70,14 +70,20 @@ async def websocket_endpoint(websocket: WebSocket):
 
 
 
-# @app.get("/")
-# async def read_root():
-#     with open("Badaudiotest.wav", "rb") as file:
-#         return await session_conversation(SpeechToChatRequest(audio=UploadFile(file), role="doctor. ou are a compassionate and patient doctor. You are talking to an elderly woman she has dementia and alzhiemers. You must not let her know that she has these conditions. Respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. You must urge these ideas in mind, your patient must listen to their family and friends. She needs to exercise, sleep, eat and drink well. She must take her medicine, and listen to her family. Respond in Vietnamese.", session_id="test"))
-
 @app.get("/")
-def read_root():
-    return {"Hello": "World"}
+async def read_root():
+    with open("Badaudiotest.wav", "rb") as file:
+        return await session_conversation(SpeechToChatRequest(audio=UploadFile(file), role="doctor. ou are a compassionate and patient doctor. You are talking to an elderly woman she has dementia and alzhiemers. You must not let her know that she has these conditions. Respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. You must urge these ideas in mind, your patient must listen to their family and friends. She needs to exercise, sleep, eat and drink well. She must take her medicine, and listen to her family. Respond in Vietnamese.", session_id="test"))
+
+# @app.get("/")
+# def read_root():
+#     return {"Hello": "World"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: str = None):
