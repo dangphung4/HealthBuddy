@@ -4,8 +4,8 @@ steps:
   args:
   - '-c'
   - |
-    gsutil cp gs://speech2123123/Speech2t.json ./Speech2t.json
-    cat Speech2t.json # Verify the file is downloaded
+    gsutil cp gs://speech2123123/Speech2t.json . || exit 1
+    if [ ! -f Speech2t.json ]; then echo "Speech2t.json not found"; exit 1; fi
 
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'gcr.io/$PROJECT_ID/healthbuddy:$COMMIT_SHA', '.']
