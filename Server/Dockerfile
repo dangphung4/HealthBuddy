@@ -1,6 +1,11 @@
 FROM python:3.12
 
+
+# Install the libsndfile library
+RUN apt-get update && apt-get install -y libsndfile1
+
 WORKDIR /app
+
 
 # Copy the requirements file first to leverage Docker cache
 COPY requirements.txt .
