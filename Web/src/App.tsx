@@ -8,101 +8,112 @@ import IconButton from '@mui/material/IconButton';
 import MenuIcon from '@mui/icons-material/Menu';
 import LightModeIcon from '@mui/icons-material/LightMode';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
-import Drawer from '@mui/material/Drawer';
-import List from '@mui/material/List';
-import ListItem from '@mui/material/ListItem';
-import ListItemText from '@mui/material/ListItemText';
 import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
 import CardMedia from '@mui/material/CardMedia';
-import placeholder from './components/placeholder.png';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import placeholder from './components/placeholder2.png';
+import './App.css';
 
-const App = () => {
+const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [themeProfile, setThemeProfile] = useState('tiramisu');
+
+  useEffect(() => {
+    document.body.className = `${darkMode ? 'dark-mode' : 'light-mode'} ${themeProfile}`;
+  }, [darkMode, themeProfile]);
 
   const theme = createTheme({
     palette: {
       mode: darkMode ? 'dark' : 'light',
       primary: {
-        main: '#4caf50', // Green shade
+        main: getComputedStyle(document.documentElement).getPropertyValue('--primary-color').trim(),
       },
-      secondary: {
-        main: '#f44336', // Red shade
+      background: {
+        default: getComputedStyle(document.documentElement).getPropertyValue('--background-color').trim(),
+        paper: getComputedStyle(document.documentElement).getPropertyValue('--box-background-color').trim(),
+      },
+      text: {
+        primary: getComputedStyle(document.documentElement).getPropertyValue('--text-color').trim(),
+      },
+    },
+    typography: {
+      fontFamily: 'Poppins, sans-serif',
+      allVariants: {
+        textTransform: 'lowercase',
+        fontWeight: 400,
       },
     },
   });
 
-  useEffect(() => {
-    document.body.style.backgroundColor = darkMode ? '#121212' : '#f5f5f5';
-  }, [darkMode]);
+  const handleToggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const handleMenuToggle = () => {
+    setMenuOpen(!menuOpen);
+  };
 
-  const menuItems = ['Home', 'Other', 'Settings', 'Log Out'];
+  const handleThemeProfileChange = (event: SelectChangeEvent<string>) => {
+    setThemeProfile(event.target.value);
+  };
 
   return (
     <ThemeProvider theme={theme}>
-      <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-        <AppBar position="static" color="inherit" elevation={0}>
+      <Box sx={{ flexGrow: 1, position: 'relative', minHeight: '100vh' }}>
+        <AppBar position="fixed" color="inherit" sx={{ zIndex: 1400 }}>
           <Toolbar>
-            <IconButton
-              size="large"
-              edge="start"
-              color="inherit"
-              aria-label="menu"
-              onClick={toggleMenu}
-            >
+            <IconButton edge="start" color="inherit" aria-label="menu" onClick={handleMenuToggle}>
               <MenuIcon />
             </IconButton>
             <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-              HealthBuddy
+              Health<span style={{ fontWeight: 'bold' }}>buddy</span>
             </Typography>
-            <IconButton color="inherit" onClick={() => setDarkMode(!darkMode)}>
-              {darkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            <IconButton color="inherit" onClick={handleToggleDarkMode}>
+              {darkMode ? <DarkModeIcon /> : <LightModeIcon />}
             </IconButton>
           </Toolbar>
         </AppBar>
-        <Drawer anchor="left" open={isMenuOpen} onClose={toggleMenu}>
-          <Box sx={{ width: 250 }}>
-            <List>
-              {menuItems.map((item, index) => (
-                <ListItem button key={`${item}-${index}`}>
-                  <ListItemText
-                    primary={item}
-                    style={{
-                      color:
-                        index === 2
-                          ? theme.palette.primary.main
-                          : index === menuItems.length - 1
-                          ? theme.palette.secondary.main
-                          : theme.palette.text.primary,
-                    }}
-                  />
-                </ListItem>
-              ))}
-            </List>
+        {menuOpen && (
+          <Box className={`dropdown-menu ${menuOpen ? 'open' : ''}`} sx={{ zIndex: 1300 }}>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Language</InputLabel>
+              <Select defaultValue="">
+                <MenuItem value="English">English</MenuItem>
+                <MenuItem value="Vietnamese">Vietnamese</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Voice</InputLabel>
+              <Select defaultValue="">
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Gender</InputLabel>
+              <Select defaultValue="">
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+              </Select>
+            </FormControl>
+            <FormControl fullWidth margin="normal">
+              <InputLabel>Color</InputLabel>
+              <Select value={themeProfile} onChange={handleThemeProfileChange}>
+                <MenuItem value="tiramisu">Tiramisu</MenuItem>
+                <MenuItem value="alpine">Alpine</MenuItem>
+                <MenuItem value="dracula">Dracula</MenuItem>
+                <MenuItem value="black-and-white">Black & White</MenuItem>
+              </Select>
+            </FormControl>
           </Box>
-        </Drawer>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            flexGrow: 0.3,
-            padding: '0.3rem',
-          }}
-        >
-          <Card sx={{ maxWidth: '90vw', maxHeight: '90vh' }}>
-            <CardMedia
-              component="img"
-              height="100%"
-              image={placeholder}
-              alt="Sample"
-            />
-            <CardContent>
-              {/* Additional content can be added here */}
-            </CardContent>
+        )}
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 64px)' }}>
+          <Card sx={{ maxWidth: 345, mt: 8, zIndex: 1200 }}>
+            <CardMedia component="img" height="140" image={placeholder} alt="Placeholder" />
           </Card>
         </Box>
       </Box>
