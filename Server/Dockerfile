@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application code
 COPY . .
 
-# Copy the Speech2t.json from Cloud Build context
+# Copy the Speech2t.json file from Cloud Build context
 COPY Speech2t.json /app/Speech2t.json
 
 # Expose the port that Cloud Run will use
