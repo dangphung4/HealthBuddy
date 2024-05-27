@@ -1,6 +1,11 @@
 steps:
 - name: 'gcr.io/cloud-builders/gsutil'
-  args: ['cp', 'gs://speech2123123/Speech2t.json', '.']
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    gsutil cp gs://speech2123123/Speech2t.json ./Speech2t.json
+    cat Speech2t.json # Verify the file is downloaded
 
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'gcr.io/$PROJECT_ID/healthbuddy:$COMMIT_SHA', '.']
@@ -9,15 +14,17 @@ steps:
   args: ['push', 'gcr.io/$PROJECT_ID/healthbuddy:$COMMIT_SHA']
 
 - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-  entrypoint: 'gcloud'
-  args: [
-    'run', 'deploy', 'healthbuddy',
-    '--image', 'gcr.io/$PROJECT_ID/healthbuddy:$COMMIT_SHA',
-    '--region', 'us-central1',
-    '--platform', 'managed',
-    '--allow-unauthenticated',
-    '--set-env-vars', 'GOOGLE_APPLICATION_CREDENTIALS=/app/Speech2t.json,OPENAI_API_KEY=$$(gcloud secrets versions access latest --secret="openai-api-key")'
-  ]
+  entrypoint: 'bash'
+  args:
+  - '-c'
+  - |
+    gcloud run deploy healthbuddy \
+    --image gcr.io/$PROJECT_ID/healthbuddy:$COMMIT_SHA \
+    --region us-central1 \
+    --platform managed \
+    --allow-unauthenticated \
+    --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=/app/Speech2t.json \
+    --set-secrets OPENAI_API_KEY=openai-api-key:latest
 
 substitutions:
   _PORT: "8080"
