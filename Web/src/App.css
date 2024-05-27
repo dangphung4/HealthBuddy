@@ -1,43 +1,162 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+/* Default Colors */
 :root {
-  --background: #f5f5f5;
-  --color: #333;
-  --nav-background: #ffffff;
-  --nav-item-hover: #e0e0e0;
-  --icon-color: #333;
+  --primary-color: #CFC6B9;  /* Light brown */
+  --secondary-color: #7D5448; /* Dark brown */
+  --background-color-light: #FFFFFF; /* White */
+  --text-color-light: #C0976F;  /* Medium brown */
+  --background-color-dark: #C0976F;  /* Medium brown */
+  --text-color-dark: #CFC6B9;  /* Light brown */
+  --box-background-color-light: #F5E8DA; /* Light brown */
+  --box-background-color-dark: #7A5544;  /* Dark brown */
+  --label-color-light: #7D5448;  /* Light mode label color */
+  --label-color-dark: #C0976F;   /* Dark mode label color */
 }
 
-body.light-mode {
-  --background: #f5f5f5;
-  --color: #333;
-  --nav-background: #ffffff;
-  --nav-item-hover: #e0e0e0;
-  --icon-color: #333;
+/* Light Mode Colors */
+.light-mode {
+  --background-color: var(--background-color-light);
+  --text-color: var(--text-color-light);
+  --primary-color: var(--primary-color);
+  --secondary-color: var(--secondary-color);
+  --box-background-color: var(--box-background-color-light);
+  --label-color: var(--label-color-light);
 }
 
-body.dark-mode {
-  --background: #171717;
-  --color: #f5f5f5;
-  --nav-background: #333; /* Updated to a darker color */
-  --nav-item-hover: #555;
-  --icon-color: #f5f5f5;
+/* Dark Mode Colors */
+.dark-mode {
+  --background-color: var(--background-color-dark);
+  --text-color: var(--text-color-dark);
+  --primary-color: var(--primary-color);
+  --secondary-color: var(--secondary-color);
+  --box-background-color: var(--box-background-color-dark);
+  --label-color: var(--label-color-dark);
 }
 
+/* Alpine Theme */
+.alpine.light-mode {
+  --primary-color: #6C687F;
+  --secondary-color: #9994B8;
+  --background-color: #FFFFFF;
+  --text-color: #6C687F;
+  --box-background-color: #E0E0F8; /* Light purple */
+  --label-color: #6C687F;
+}
+
+.alpine.dark-mode {
+  --primary-color: #6C687F;
+  --secondary-color: #9994B8;
+  --background-color: #6C687F;
+  --text-color: #FFFFFF;
+  --box-background-color: #4B4B5B; /* Dark purple */
+  --label-color: #9994B8;
+}
+
+/* Black and White Theme */
+.black-and-white.light-mode {
+  --primary-color: #000000;  /* Black */
+  --secondary-color: #FFFFFF; /* White */
+  --background-color: #FFFFFF;
+  --text-color: #ffffff;
+  --box-background-color: #1c1c1c; /* Light grey */
+  --label-color: #ffffff;
+}
+
+.black-and-white.dark-mode {
+  --primary-color: #000000;
+  --secondary-color: #FFFFFF;
+  --background-color: #000000;
+  --text-color: #FFFFFF;
+  --box-background-color: #141414;  /* Dark grey */
+  --label-color: #FFFFFF;
+}
+
+/* Dracula Theme */
+.dracula.light-mode {
+  --primary-color: #bd93f9;
+  --secondary-color: #ff79c6;
+  --background-color: #FFFFFF;
+  --text-color: #282a36;
+  --box-background-color: #F8F8FF; /* Ghost white */
+  --label-color: #bd93f9;
+}
+
+.dracula.dark-mode {
+  --primary-color: #282a36;
+  --secondary-color: #ff79c6;
+  --background-color: #282a36;
+  --text-color: #bd93f9;
+  --box-background-color: #3B3B58; /* Dark blue */
+  --label-color: #ff79c6;
+}
+
+/* Global Styles */
 body {
-  background-color: var(--background);
-  color: var(--color);
-  transition: background-color 0.3s, color 0.3s;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--background-color);
+  color: var(--text-color);
+  min-height: 100vh;
 }
 
-.navbar {
-  background-color: var(--nav-background);
-  transition: background-color 0.3s, color 0.3s;
+/* Dropdown Menu Styles */
+.dropdown-menu {
+  position: fixed;
+  width: 100%;
+  top: 55px;
+  left: 0;
+  background-color: var(--box-background-color);
+  color: var(--text-color);
+  z-index: 1300;
+  padding: 1rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-100%);
+  opacity: 0;
+  transition: transform 0.3s ease, opacity 0.3s ease;
 }
 
-.nav-item {
-  color: var(--color);
-  transition: background-color 0.3s, color 0.3s;
+.dropdown-menu.open {
+  transform: translateY(0);
+  opacity: 1;
 }
 
-.nav-item:hover {
-  background-color: var(--nav-item-hover);
+/* Ensure dropdown items are opaque */
+.MuiPaper-root {
+  background-color: var(--box-background-color) !important;
+  color: var(--text-color) !important;
+}
+
+/* Ensure dropdown items are not translucent */
+.MuiMenuItem-root {
+  background-color: var(--box-background-color) !important;
+  color: var(--text-color) !important;
+}
+
+/* Remove extra padding from dropdown items */
+.MuiMenuItem-root {
+  padding: 6px 16px;
+}
+
+/* Adjust label styling to prevent overflow */
+.MuiInputLabel-root {
+  background-color: var(--box-background-color);
+  color: var(--label-color);
+  padding: 0 0.5rem;
+  transform: translate(14px, -6px) scale(0.75);
+}
+
+.MuiOutlinedInput-root {
+  &.Mui-focused .MuiOutlinedInput-notchedOutline {
+    border-color: var(--label-color) !important;
+  }
+}
+
+.MuiAppBar-colorInherit {
+  background-color: var(--primary-color);
+  color: var(--text-color);
+}
+
+.MuiButtonBase-root {
+  color: inherit; /* Ensures buttons inherit AppBar color */
 }
