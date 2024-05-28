@@ -14,7 +14,7 @@ import Select, { SelectChangeEvent } from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
-import placeholder from "./components/placeholder2.png";
+import doctor1 from "./components/doctor1.jpg";
 import { FiberManualRecord, Stop } from "@mui/icons-material";
 import axios from "axios";
 import RecordRTC, { StereoAudioRecorder } from "recordrtc";
@@ -228,7 +228,7 @@ const App: React.FC = () => {
           }}
         >
           <Card
-            sx={{ maxWidth: 405, mt: 8, zIndex: 1200, position: "relative" }}
+            sx={{ maxWidth: 405, maxHeight: 700, mt: 8, zIndex: 1200, position: "relative" }}
           >
             <IconButton
               color="inherit"
@@ -249,8 +249,8 @@ const App: React.FC = () => {
             <CardMedia
               component="img"
               height="140"
-              image={placeholder}
-              alt="Placeholder"
+              image={doctor1}
+              alt="doctor"
               sx={{ width: "100%", height: "auto" }} // Ensure the image covers the card area
             />
             <Box
