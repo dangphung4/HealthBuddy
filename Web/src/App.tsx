@@ -26,8 +26,10 @@ const App: React.FC = () => {
   const [themeProfile, setThemeProfile] = useState("tiramisu");
   const [recorder, setRecorder] = useState<RecordRTC | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-  const [sessionID, setSessionID] = useState("test4");
   const [transcript, setTranscript] = useState("");
+  
+  const sessionID = new Date().getTime().toString();
+
 
   useEffect(() => {
     document.body.className = `${
@@ -67,17 +69,34 @@ const App: React.FC = () => {
   });
 
   const handleToggleDarkMode = () => {
-    setDarkMode(!darkMode);
+    const newDarkMode = !darkMode;
+    setDarkMode(newDarkMode);
+    localStorage.setItem("darkMode", newDarkMode.toString());
   };
 
   const handleMenuToggle = () => {
     setMenuOpen(!menuOpen);
   };
 
+
   const handleThemeProfileChange = (event: SelectChangeEvent<string>) => {
-    setThemeProfile(event.target.value);
+    const selectedTheme = event.target.value;
+    setThemeProfile(selectedTheme);
+    localStorage.setItem("themeProfile", selectedTheme);
   };
 
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem("darkMode");
+    if (savedDarkMode !== null) {
+      setDarkMode(savedDarkMode === "true");
+    }
+  
+    const savedThemeProfile = localStorage.getItem("themeProfile");
+    if (savedThemeProfile !== null) {
+      setThemeProfile(savedThemeProfile);
+    }
+  }, []);
+  
   useEffect(() => {
     // Set up the recorder
     const requestMicrophoneAccess = async () => {
