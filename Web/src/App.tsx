@@ -27,6 +27,7 @@ const App: React.FC = () => {
   const [recorder, setRecorder] = useState<RecordRTC | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [sessionID, setSessionID] = useState("test4");
+  const [transcript, setTranscript] = useState("");
 
   useEffect(() => {
     document.body.className = `${
@@ -156,6 +157,7 @@ const App: React.FC = () => {
 
       const { transcript, audio } = response.data;
       // Handle the received transcript and audio
+      setTranscript(transcript);
       console.log("Transcript:", transcript);
       playReceivedAudio(audio);
     } catch (error) {
@@ -262,10 +264,23 @@ const App: React.FC = () => {
                 padding: "8px",
               }}
             >
-              {isRecording ? "Is Recording" : "Not Recording"}
+              {isRecording ? "Recording..." : "Tap record to start"}
             </Box>
           </Card>
         </Box>
+        <Typography
+          variant="body2"
+          color="textSecondary"
+          component="p"
+          sx={{
+            textAlign: "center",
+            bgcolor: "rgba(0, 0, 0, 0.7)",
+            color: "white",
+            padding: 1,
+          }}
+        >
+          {transcript || "No caption available"} 
+        </Typography>
       </Box>
     </ThemeProvider>
   );
