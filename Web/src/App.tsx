@@ -19,8 +19,7 @@ import { FiberManualRecord, Stop } from "@mui/icons-material";
 import axios from "axios";
 import RecordRTC, { StereoAudioRecorder } from "recordrtc";
 import "./App.css";
-import https from 'https';
-
+import ReplayIcon from "@mui/icons-material/Replay";
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -29,9 +28,13 @@ const App: React.FC = () => {
   const [recorder, setRecorder] = useState<RecordRTC | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [transcript, setTranscript] = useState("");
-  
-  const sessionID = new Date().getTime().toString();
 
+  const [receivedAudio, setReceivedAudio] = useState<Blob | null>(null);
+
+  const sessionID = new Date().getTime().toString();
+  const [processingStatus, setProcessingStatus] = useState<
+    "idle" | "recording" | "processing" | "failed"
+  >("idle");
 
   useEffect(() => {
     document.body.className = `${
@@ -80,7 +83,6 @@ const App: React.FC = () => {
     setMenuOpen(!menuOpen);
   };
 
-
   const handleThemeProfileChange = (event: SelectChangeEvent<string>) => {
     const selectedTheme = event.target.value;
     setThemeProfile(selectedTheme);
@@ -92,7 +94,7 @@ const App: React.FC = () => {
     if (savedDarkMode !== null) {
       setDarkMode(savedDarkMode === "true");
     }
-  
+
     const savedThemeProfile = localStorage.getItem("themeProfile");
     if (savedThemeProfile !== null) {
       setThemeProfile(savedThemeProfile);
@@ -125,6 +127,7 @@ const App: React.FC = () => {
   const startRecording = () => {
     recorder?.startRecording();
     setIsRecording(true);
+    setProcessingStatus("recording");
   };
 
   const stopRecording = async () => {
@@ -135,6 +138,7 @@ const App: React.FC = () => {
       setupRecorder(); // Setup the recorder again for a new session
     });
     setIsRecording(false);
+    setProcessingStatus("processing");
   };
 
   let mediaStream: MediaStream; // Keep a reference to the stream
@@ -173,7 +177,6 @@ const App: React.FC = () => {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
-          httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         }
       );
 
@@ -182,13 +185,16 @@ const App: React.FC = () => {
       setTranscript(transcript);
       console.log("Transcript:", transcript);
       playReceivedAudio(audio);
+      setProcessingStatus("idle");
     } catch (error) {
       console.error("Error:", error);
+      setProcessingStatus("failed");
     }
   };
 
   const playReceivedAudio = (audioBase64: string) => {
     const audioBlob = base64ToBlob(audioBase64, "audio/mp3");
+    setReceivedAudio(audioBlob);
     const audioUrl = URL.createObjectURL(audioBlob);
     const audio = new Audio(audioUrl);
     audio.play();
@@ -202,6 +208,14 @@ const App: React.FC = () => {
     }
     const byteArray = new Uint8Array(byteNumbers);
     return new Blob([byteArray], { type: contentType });
+  };
+
+  const handleReplay = () => {
+    if (receivedAudio) {
+      const audioUrl = URL.createObjectURL(receivedAudio);
+      const audio = new Audio(audioUrl);
+      audio.play();
+    }
   };
 
   return (
@@ -230,6 +244,7 @@ const App: React.FC = () => {
             className={`dropdown-menu ${menuOpen ? "open" : ""}`}
             sx={{ zIndex: 1300 }}
           >
+            Current Session ID: {sessionID}
             <FormControl fullWidth margin="normal">
               <InputLabel>Color</InputLabel>
               <Select value={themeProfile} onChange={handleThemeProfileChange}>
@@ -241,6 +256,12 @@ const App: React.FC = () => {
             </FormControl>
           </Box>
         )}
+        {receivedAudio && (
+          <IconButton onClick={handleReplay} color="inherit">
+            <ReplayIcon sx={{ color: "black" }} />
+            <p>REPLAY</p>
+          </IconButton>
+        )}
         <Box
           sx={{
             display: "flex",
@@ -250,24 +271,35 @@ const App: React.FC = () => {
           }}
         >
           <Card
-            sx={{ maxWidth: 405, maxHeight: 700, mt: 8, zIndex: 1200, position: "relative" }}
+            sx={{
+              maxWidth: 405,
+              maxHeight: 700,
+              mt: 8,
+              zIndex: 1200,
+              position: "relative",
+            }}
           >
             <IconButton
               color="inherit"
-              onClick={startRecording}
+              onClick={isRecording ? stopRecording : startRecording}
               sx={{ position: "absolute", top: 5, left: 5 }}
             >
-              <FiberManualRecord
-                sx={{ color: isRecording ? "grey" : "red", fontSize: "3rem" }}
-              />
+              {isRecording ? (
+                <Stop sx={{ color: "grey", fontSize: "3rem" }} />
+              ) : (
+                <FiberManualRecord sx={{ color: "red", fontSize: "3rem" }} />
+              )}
             </IconButton>
-            <IconButton
-              color="inherit"
-              onClick={stopRecording}
-              sx={{ position: "absolute", top: 5, right: 5 }}
-            >
-              <Stop sx={{ fontSize: "3rem" }} />
-            </IconButton>
+
+            {receivedAudio && (
+              <IconButton
+                color="inherit"
+                onClick={handleReplay}
+                sx={{ position: "absolute", top: 5, right: 5 }}
+              >
+                <ReplayIcon sx={{ fontSize: "3rem" }} />
+              </IconButton>
+            )}
             <CardMedia
               component="img"
               height="140"
@@ -286,10 +318,15 @@ const App: React.FC = () => {
                 padding: "8px",
               }}
             >
-              {isRecording ? "Recording..." : "Tap record to start"}
+              {processingStatus === "idle" && "Tap record to start"}
+              {processingStatus === "recording" && "Recording..."}
+              {processingStatus === "processing" && "Processing..."}
+              {processingStatus === "failed" &&
+                "Recording failed. Refresh the page."}
             </Box>
           </Card>
         </Box>
+
         <Typography
           variant="body2"
           color="textSecondary"
@@ -301,7 +338,7 @@ const App: React.FC = () => {
             padding: 1,
           }}
         >
-          {transcript || "No caption available"} 
+          {transcript || "No caption available"}
         </Typography>
       </Box>
     </ThemeProvider>
