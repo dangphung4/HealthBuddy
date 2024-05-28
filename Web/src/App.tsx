@@ -19,6 +19,8 @@ import { FiberManualRecord, Stop } from "@mui/icons-material";
 import axios from "axios";
 import RecordRTC, { StereoAudioRecorder } from "recordrtc";
 import "./App.css";
+import https from 'https';
+
 
 const App: React.FC = () => {
   const [darkMode, setDarkMode] = useState(false);
@@ -171,6 +173,7 @@ const App: React.FC = () => {
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
+          httpsAgent: new https.Agent({ rejectUnauthorized: false }),
         }
       );
 
