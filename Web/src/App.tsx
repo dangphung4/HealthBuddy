@@ -96,7 +96,7 @@ const App: React.FC = () => {
       setThemeProfile(savedThemeProfile);
     }
   }, []);
-  
+
   useEffect(() => {
     // Set up the recorder
     const requestMicrophoneAccess = async () => {
@@ -167,7 +167,7 @@ const App: React.FC = () => {
       formData.append("session_id", sessionID || "new");
 
       const response = await axios.post(
-        "http://ec2-54-198-198-28.compute-1.amazonaws.com:8000/session-conversation/",
+        "https://ec2-54-198-198-28.compute-1.amazonaws.com/session-conversation/",
         formData,
         {
           headers: { "Content-Type": "multipart/form-data" },
