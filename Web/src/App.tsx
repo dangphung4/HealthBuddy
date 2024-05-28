@@ -15,6 +15,7 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import InputLabel from "@mui/material/InputLabel";
 import placeholder from "./components/placeholder2.png";
+import { FiberManualRecord, Stop } from "@mui/icons-material";
 import axios from "axios";
 import RecordRTC, { StereoAudioRecorder } from "recordrtc";
 import "./App.css";
@@ -25,11 +26,7 @@ const App: React.FC = () => {
   const [themeProfile, setThemeProfile] = useState("tiramisu");
   const [recorder, setRecorder] = useState<RecordRTC | null>(null);
   const [isRecording, setIsRecording] = useState(false);
-
-  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(
-    null
-  );
-  const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
+  const [sessionID, setSessionID] = useState("test4");
 
   useEffect(() => {
     document.body.className = `${
@@ -112,10 +109,34 @@ const App: React.FC = () => {
     recorder?.stopRecording(() => {
       const blob = recorder.getBlob();
       sendAudioToServer(blob);
+      recorder.reset(); // Reset or destroy the recorder if necessary
+      setupRecorder(); // Setup the recorder again for a new session
     });
     setIsRecording(false);
   };
 
+  let mediaStream: MediaStream; // Keep a reference to the stream
+
+  const setupRecorder = async () => {
+    if (mediaStream) {
+      mediaStream.getTracks().forEach((track) => track.stop()); // Stop all tracks before starting a new one
+    }
+    try {
+      mediaStream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+      });
+      const newRecorder = new RecordRTC(mediaStream, {
+        type: "audio",
+        mimeType: "audio/wav",
+        recorderType: StereoAudioRecorder,
+        numberOfAudioChannels: 1,
+        desiredSampRate: 16000,
+      });
+      setRecorder(newRecorder);
+    } catch (error) {
+      console.error("Failed to get microphone access:", error);
+    }
+  };
   const sendAudioToServer = async (audioBlob: Blob) => {
     try {
       const formData = new FormData();
@@ -123,7 +144,7 @@ const App: React.FC = () => {
       formData.append("language", "vi-VN");
       formData.append("voice_name", "vi-VN-Neural2-D");
       formData.append("voice_gender", "MALE");
-      formData.append("session_id", "test1");
+      formData.append("session_id", sessionID || "new");
 
       const response = await axios.post(
         "http://ec2-54-198-198-28.compute-1.amazonaws.com:8000/session-conversation/",
@@ -186,27 +207,6 @@ const App: React.FC = () => {
             sx={{ zIndex: 1300 }}
           >
             <FormControl fullWidth margin="normal">
-              <InputLabel>Language</InputLabel>
-              <Select defaultValue="">
-                <MenuItem value="English">English</MenuItem>
-                <MenuItem value="Vietnamese">Vietnamese</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Voice</InputLabel>
-              <Select defaultValue="">
-                <MenuItem value="Male">Male</MenuItem>
-                <MenuItem value="Female">Female</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal">
-              <InputLabel>Gender</InputLabel>
-              <Select defaultValue="">
-                <MenuItem value="Male">Male</MenuItem>
-                <MenuItem value="Female">Female</MenuItem>
-              </Select>
-            </FormControl>
-            <FormControl fullWidth margin="normal">
               <InputLabel>Color</InputLabel>
               <Select value={themeProfile} onChange={handleThemeProfileChange}>
                 <MenuItem value="tiramisu">Tiramisu</MenuItem>
@@ -225,17 +225,45 @@ const App: React.FC = () => {
             minHeight: "calc(100vh - 64px)",
           }}
         >
-          <Card sx={{ maxWidth: 345, mt: 8, zIndex: 1200 }}>
-            <IconButton color="inherit" onClick={startRecording}>
-              {isRecording ? <p>Recording</p> : <p> not Recording</p>}
+          <Card
+            sx={{ maxWidth: 405, mt: 8, zIndex: 1200, position: "relative" }}
+          >
+            <IconButton
+              color="inherit"
+              onClick={startRecording}
+              sx={{ position: "absolute", top: 5, left: 5 }}
+            >
+              <FiberManualRecord
+                sx={{ color: isRecording ? "grey" : "red", fontSize: "3rem" }}
+              />
+            </IconButton>
+            <IconButton
+              color="inherit"
+              onClick={stopRecording}
+              sx={{ position: "absolute", top: 5, right: 5 }}
+            >
+              <Stop sx={{ fontSize: "3rem" }} />
             </IconButton>
             <CardMedia
               component="img"
               height="140"
               image={placeholder}
               alt="Placeholder"
+              sx={{ width: "100%", height: "auto" }} // Ensure the image covers the card area
             />
-            <button onClick={stopRecording}>Stop Recording</button>
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                width: "100%",
+                textAlign: "center",
+                bgcolor: "rgba(0, 0, 0, 0.7)",
+                color: "white",
+                padding: "8px",
+              }}
+            >
+              {isRecording ? "Is Recording" : "Not Recording"}
+            </Box>
           </Card>
         </Box>
       </Box>

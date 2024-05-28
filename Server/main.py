@@ -194,11 +194,8 @@ async def full_conversation(request: SpeechToChatRequest):
     client = OpenAI()
     chat_response = client.chat.completions.create(
         model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": "You are a compassionate and patient doctor. You are talking to an elderly woman she has dementia and alzhiemers. You must not let her know that she has these conditions. Respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. You must urge these ideas in mind, your patient must listen to their family and friends. She needs to exercise, sleep, eat and drink well. She must take her medicine, and listen to her family. Respond in Vietnamese."},
-            {"role": "user", "content": transcript}
-        ]    
-        )
+        messages=[{"role": "user", "content": transcript}, {"role": "assistant", "content": f"Act as a {request.role}"}]
+    )
     chat_text = chat_response.choices[0].message.content
     
     
@@ -231,136 +228,159 @@ async def full_conversation(request: SpeechToChatRequest):
     return JSONResponse(content={"transcript": transcript, "audio": audio_base64})
 
 
-app.post("/session-conversation/")
-async def session_conversation(request: SpeechToChatRequest, end_session: bool = False, session_id: str = None, language: str = "vi-VN", voice_name: str = None, voice_gender: str = None):
-    if session_id is None:
-        session_id = create_session_id()  # Create a new session for each conversation
-        sessions[session_id] = []  # Initialize session history
-
-    if session_id not in sessions:
-        sessions[session_id] = []
-    logging.debug(f"Received voice name: {voice_name}, voice gender: {voice_gender}")
-
-    # Convert speech to text
-    audio_content = await request.audio.read()
-    audio_buffer = io.BytesIO(audio_content)
-    data, sr = sf.read(audio_buffer)
-    audio_recognition = speech.RecognitionAudio(content=audio_content)
-    stt_config = speech.RecognitionConfig(
-        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=sr,  # Use the sample rate retrieved from the audio file
-        language_code="vi-VN"
-    )
-    speech_response = speech_client.recognize(config=stt_config, audio=audio_recognition)
-    transcript = " ".join([result.alternatives[0].transcript for result in speech_response.results])
-
-    # Store transcript in session history
-    sessions[session_id].append({"role": "user", "content": transcript})
-
-    # Generate response using OpenAI, incorporating session context
-    client = OpenAI()
-    chat_response = client.chat.completions.create(
-        model="gpt-4o",  # Assuming using GPT-4
-          messages=[
-            {"role": "system", "content": "You are a compassionate and patient doctor. You are talking to an elderly woman she has dementia and alzhiemers. You must not let her know that she has these conditions. Respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. You must urge these ideas in m"},
-            {"role": "user", "content": transcript}
-        ]
-    )
-    chat_text = chat_response.choices[0].message.content
-
-    # Update session history with the assistant's response
-    sessions[session_id].append({"role": "assistant", "content": chat_text})
-
-    # Convert response text back to speech
-    tts_input = texttospeech.SynthesisInput(text=chat_text)
-    tts_voice = texttospeech.VoiceSelectionParams(
-        language_code="vi-VN",
-        name="vi-VN-Neural2-D",
-        ssml_gender=texttospeech.SsmlVoiceGender.MALE
-    )
-    tts_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
-    tts_response = tts_client.synthesize_speech(
-        input=tts_input,
-        voice=tts_voice,
-        audio_config=tts_config
-    )
-
-    # output_file = "output_audio-session.mp3"
-    # with open(output_file, "wb") as f:
-    #     f.write(tts_response.audio_content)
-
-    # Encode the audio response as Base64
-    audio_base64 = b64encode(tts_response.audio_content).decode("utf-8")
-
-    # Clear session after conversation ends
-    if end_session:
-        del sessions[session_id]
-
-    # Return the transcript and audio response as JSON
-    return JSONResponse(content={"transcript": transcript, "audio": audio_base64})
 @app.post("/session-conversation/")
-async def session_conversation(request: SpeechToChatRequest, end_session: bool = False, session_id: str = None, language: str = "en-US", voice_name: str = None, voice_gender: str = "NEUTRAL"):
+async def session_conversation(
+    audio: UploadFile = File(...), 
+    role: str = "user", 
+    language: str = "en-US", 
+    voice_name: str = None, 
+    voice_gender: str = "NEUTRAL", 
+    session_id: str = None, 
+    end_session: bool = False
+):
     if session_id is None:
         session_id = create_session_id()  # Create a new session for each conversation
         sessions[session_id] = []  # Initialize session history
+        sessions[session_id].append({"role": "system", "content": "You are a compassionate and patient doctor. You are talking to an elderly woman she has dementia and alzhiemers. You must not let her know that she has these conditions. Respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. You must urge these ideas in mind, your patient must listen to their family and friends. She needs to exercise, sleep, eat and drink well. She must take her medicine, and listen to her family. Respond in Vietnamese."})
 
     if session_id not in sessions:
         sessions[session_id] = []
+        sessions[session_id].append({"role": "system", "content": "You are a compassionate and patient doctor. You are talking to an elderly woman she has dementia and alzhiemers. You must not let her know that she has these conditions. Respond in a way that is easy for her to understand, be reassuring, and provide simple and clear advice. You must urge these ideas in mind, your patient must listen to their family and friends. She needs to exercise, sleep, eat and drink well. She must take her medicine, and listen to her family. Respond in Vietnamese."})
 
-    # Convert speech to text
-    audio_content = await request.audio.read()
-    audio_buffer = io.BytesIO(audio_content)
-    data, sr = sf.read(audio_buffer)
-    audio_recognition = speech.RecognitionAudio(content=audio_content)
-    stt_config = speech.RecognitionConfig(
-        encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
-        sample_rate_hertz=sr,  # Use the sample rate retrieved from the audio file
-        language_code=language
-    )
-    speech_response = speech_client.recognize(config=stt_config, audio=audio_recognition)
-    transcript = " ".join([result.alternatives[0].transcript for result in speech_response.results])
+    try:
+        # Read audio file
+        audio_content = await audio.read()
+        logging.debug(f"Audio content length: {len(audio_content)} bytes")
 
-    # Store transcript in session history
-    sessions[session_id].append({"role": "user", "content": transcript})
+        audio_buffer = io.BytesIO(audio_content)
+        
+        # Read audio data and sample rate using soundfile
+        data, sr = sf.read(audio_buffer)
+        logging.debug(f"Audio sample rate: {sr}")
 
-    # Generate response using OpenAI, incorporating session context
-    client = OpenAI()
-    chat_response = client.chat.completions.create(
-        model="gpt-4o",  # Assuming using GPT-4
-        messages=sessions[session_id]
-    )
-    chat_text = chat_response.choices[0].message.content
+        # Prepare audio for Google Cloud Speech-to-Text
+        audio_recognition = speech.RecognitionAudio(content=audio_content)
+        stt_config = speech.RecognitionConfig(
+            encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+            sample_rate_hertz=sr,  # Use the sample rate retrieved from the audio file
+            language_code="vi-VN"  # Set the language to Vietnamese
+        )
+        
+        # Perform speech recognition
+        speech_response = speech_client.recognize(config=stt_config, audio=audio_recognition)
+        transcript = " ".join([result.alternatives[0].transcript for result in speech_response.results])
+        logging.debug(f"Transcript: {transcript}")
 
-    # Update session history with the assistant's response
-    sessions[session_id].append({"role": "assistant", "content": chat_text})
+        # Store transcript in session history
+        sessions[session_id].append({"role": "user", "content": transcript})
+        # Generate response using OpenAI, incorporating session context
+        client = OpenAI()
+        chat_response = client.chat.completions.create(
+            model="gpt-4o",  # Assuming using GPT-4
+            messages=sessions[session_id]
+        )
+        chat_text = chat_response.choices[0].message.content
 
-    # Convert response text back to speech
-    tts_input = texttospeech.SynthesisInput(text=chat_text)
-    tts_voice = texttospeech.VoiceSelectionParams(
-        language_code=language,
-        name=voice_name,
-        ssml_gender=texttospeech.SsmlVoiceGender[voice_gender]
-    )
-    tts_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
-    tts_response = tts_client.synthesize_speech(
-        input=tts_input,
-        voice=tts_voice,
-        audio_config=tts_config
-    )
+        logging.debug(f"Chat text: {chat_text}")
 
-    # output_file = "output_audio-session.mp3"
-    # with open(output_file, "wb") as f:
-    #     f.write(tts_response.audio_content)
+        # Update session history with the assistant's response
+        sessions[session_id].append({"role": "assistant", "content": chat_text})
 
-    # Encode the audio response as Base64
-    audio_base64 = b64encode(tts_response.audio_content).decode("utf-8")
+        # Convert response text back to speech
+        tts_input = texttospeech.SynthesisInput(text=chat_text)
+        tts_voice = texttospeech.VoiceSelectionParams(
+            # language_code=language,
+            language_code="vi-VN",
+            name="vi-VN-Neural2-D",
+            # name=voice_name,
+            ssml_gender=texttospeech.SsmlVoiceGender.MALE
+            # ssml_gender=texttospeech.SsmlVoiceGender[voice_gender]
+        )
+        tts_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        tts_response = tts_client.synthesize_speech(
+            input=tts_input,
+            voice=tts_voice,
+            audio_config=tts_config
+        )
 
-    # Clear session after conversation ends
-    if end_session:
-        del sessions[session_id]
+        # Encode the audio response as Base64
+        audio_base64 = b64encode(tts_response.audio_content).decode("utf-8")
+        logging.debug("Audio response encoded to base64")
 
-    # Return the transcript and audio response as JSON
-    return JSONResponse(content={"transcript": transcript, "audio": audio_base64})
+        # Clear session after conversation ends
+        if end_session:
+            del sessions[session_id]
+
+        # Return the transcript and audio response as JSON
+        return JSONResponse(content={"transcript": chat_text, "audio": audio_base64})
+
+    except Exception as e:
+        logging.error(f"Exception occurred: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# @app.post("/session-conversation/")
+# async def session_conversation(request: SpeechToChatRequest, end_session: bool = False, session_id: str = None, language: str = "en-US", voice_name: str = None, voice_gender: str = "NEUTRAL"):
+#     if session_id is None:
+#         session_id = create_session_id()  # Create a new session for each conversation
+#         sessions[session_id] = []  # Initialize session history
+
+#     if session_id not in sessions:
+#         sessions[session_id] = []
+
+#     # Convert speech to text
+#     audio_content = await request.audio.read()
+#     audio_buffer = io.BytesIO(audio_content)
+#     data, sr = sf.read(audio_buffer)
+#     audio_recognition = speech.RecognitionAudio(content=audio_content)
+#     stt_config = speech.RecognitionConfig(
+#         encoding=speech.RecognitionConfig.AudioEncoding.LINEAR16,
+#         sample_rate_hertz=sr,  # Use the sample rate retrieved from the audio file
+#         language_code=language
+#     )
+#     speech_response = speech_client.recognize(config=stt_config, audio=audio_recognition)
+#     transcript = " ".join([result.alternatives[0].transcript for result in speech_response.results])
+
+#     # Store transcript in session history
+#     sessions[session_id].append({"role": "user", "content": transcript})
+
+#     # Generate response using OpenAI, incorporating session context
+#     client = OpenAI()
+#     chat_response = client.chat.completions.create(
+#         model="gpt-4o",  # Assuming using GPT-4
+#         messages=sessions[session_id]
+#     )
+#     chat_text = chat_response.choices[0].message.content
+
+#     # Update session history with the assistant's response
+#     sessions[session_id].append({"role": "assistant", "content": chat_text})
+
+#     # Convert response text back to speech
+#     tts_input = texttospeech.SynthesisInput(text=chat_text)
+#     tts_voice = texttospeech.VoiceSelectionParams(
+#         language_code=language,
+#         name=voice_name,
+#         ssml_gender=texttospeech.SsmlVoiceGender[voice_gender]
+#     )
+#     tts_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+#     tts_response = tts_client.synthesize_speech(
+#         input=tts_input,
+#         voice=tts_voice,
+#         audio_config=tts_config
+#     )
+
+#     # output_file = "output_audio-session.mp3"
+#     # with open(output_file, "wb") as f:
+#     #     f.write(tts_response.audio_content)
+
+#     # Encode the audio response as Base64
+#     audio_base64 = b64encode(tts_response.audio_content).decode("utf-8")
+
+#     # Clear session after conversation ends
+#     if end_session:
+#         del sessions[session_id]
+
+#     # Return the transcript and audio response as JSON
+#     return JSONResponse(content={"transcript": transcript, "audio": audio_base64})
 
 @app.post("/openai-chat/")
 async def openai_chat(request: OpenAIRequest):
