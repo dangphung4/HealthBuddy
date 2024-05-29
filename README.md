@@ -12,7 +12,7 @@ Hey there! Welcome to HealthBuddy, your personal health assistant. It's like hav
 
 - **Frontend**: Built with React and powered by Vite for speedy interactions.
 - **Backend**: Runs on FastAPI, which keeps things running smoothly.
-- **AI Tools**: Uses Synthesia AI for lip-sync animations and Google Cloud Text-to-Speech for clear and natural voice responses.
+- **AI Tools**: Uses AI for lip-sync animations and Google Cloud Text-to-Speech for clear and natural voice responses.
 
 ## Project Layout
 
@@ -31,7 +31,7 @@ Here’s how we’ve organized the project:
 ### Prerequisites
 
 - Node.js
-- Python 3.8+
+- Python 3.12+
 - Git
 
 ### Installation
@@ -39,14 +39,14 @@ Here’s how we’ve organized the project:
 #### Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/healthbuddy.git
+git clone https://github.com/dangphung4/healthbuddy.git
 cd healthbuddy
 ```
 
 #### Frontend Setup
 
 ```bash
-cd frontend
+cd Web
 npm install
 npm run dev
 ```
@@ -54,7 +54,7 @@ npm run dev
 #### Backend Setup
 
 ```bash
-cd ../backend
+cd ../Server
 pip install -r requirements.txt
 uvicorn main:app --reload
 OR
@@ -81,9 +81,5 @@ Interested in making HealthBuddy better? We love your input! We want to make con
 ## License
 
 HealthBuddy is open source software licensed as MIT. The license is available in the [LICENSE.md](LICENSE.md) file in our repo.
-
-## Thanks
-
-- Cheers to Synthesia AI and Google Cloud Text-to-Speech for the tech that makes HealthBuddy come alive.
 
 ---
